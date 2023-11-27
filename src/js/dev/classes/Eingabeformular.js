@@ -7,117 +7,118 @@ import liqui_planner from "../liqui-planner.js";
 import Fehlerbox from "./Fehlerbox.js";
 
 /**
- * Die Klass "Eingabeformular" stellt alle Eigenschaften
+ * Die Klasse "Eingabeformular" stellt alle Eigenschaften
  * und Methoden des Eingabeformulars (inkl. HTML und Events) zur Verfügung.
  */
 export default class Eingabeformular {
+  /**
+   * Der Konstruktor generiert bei Instanziierung der Klasse "Eingaberformular"
+   * das HTML des Eingabeformulars.
+   * @property {Element} _html -das HTML des Eingabeformulars
+   */
+  constructor() {
+    this._html = this._html_generieren();
+  }
 
-    /**
-     * Der Konstruktor generiert bei Instanziierung der Klasse "Eingaberformular"
-     * das HTML des Eingabeformulars.
-     * @property {Element} _html -das HTML des Eingabeformulars
-     */
-    constructor() {
-        this._html = this._html_generieren();
+  /**
+   * Diese private Methode extrahiert die im Eingabeformular eingegebenen Daten aus
+   * dem Submit-Event des Eingabeformulars.
+   * @param {Event} submit_event - das Submit-Event des Eingabeformulars
+   * @returns {Objekt} - einfaches Objekt mit den Rohdaten des Eingabeformulars
+   */
+  _formulardaten_holen(submit_event) {
+    return {
+      titel: submit_event.target.elements.titel.value,
+      betrag: submit_event.target.elements.betrag.value,
+      einnahme: submit_event.target.elements.einnahme.checked,
+      datum: submit_event.target.elements.datum.valueAsDate,
+    };
+  }
+
+  /**
+   * Diese private Methode verarbeitet die dur this._formulardaten_holen() zur Verfügung gestellten Formulardaten.
+   * @param {Objekt} formulardaten - einfaches Objekt mit den rohen Formulardaten
+   * @returns {Objekt} - einfaches Objekt mit den verarbeiteten Formulardaten
+   */
+  _formulardaten_verarbeiten(formulardaten) {
+    return {
+      titel: formulardaten.titel.trim(),
+      typ: formulardaten.einnahme === false ? "ausgabe" : "einnahme",
+      betrag: parseFloat(formulardaten.betrag) * 100,
+      datum: formulardaten.datum,
+    };
+  }
+
+  /**
+   * Die private Methode validiert die durch this._formulardaten_verarbeiten() zur Verfügung gestellte Formulardaten.
+   * @param {Objekt} formulardaten - einfaches Objekt mit den verarbeiteten Formulardaten
+   * @returns {Array} - ein Array mit den Namen der Eingabefelder für die Validierungsfehler die gefunden wurden
+   */
+  _formulardaten_validieren(formulardaten) {
+    let fehler = [];
+    if (formulardaten.titel === "") {
+      fehler.push("Titel");
     }
-
-    /**
-     * Diese private Methode extrahiert die im Eingabeformular eingegebenen Daten aus
-     * dem Submit-Event des Eingabeformulars.
-     * @param {Event} submit_event - das Submit-Event des Eingabeformulars  
-     * @returns {Objekt} - einfaches Objekt mit den Rohdaten des Eingabeformulars
-     */
-    _formulardaten_holen(submit_event) {
-        return {
-            titel: submit_event.target.elements.titel.value,
-            betrag: submit_event.target.elements.betrag.value,
-            einnahme: submit_event.target.elements.einnahme.checked,
-            datum: submit_event.target.elements.datum.valueAsDate
-        }
-    } 
-    
-    /**
-     * Diese private Methode verarbeitet die dur this._formulardaten_holen() zur Verfügung gestellten Formulardaten.
-     * @param {Objekt} formulardaten - einfaches Objekt mit den rohen Formulardaten 
-     * @returns {Objekt} - einfaches Objekt mit den verarbeiteten Formulardaten
-     */
-    _formulardaten_verarbeiten(formulardaten) {
-        return {
-            titel: formulardaten.titel.trim(),
-            typ: formulardaten.einnahme === false ? "ausgabe" : "einnahme",
-            betrag: parseFloat(formulardaten.betrag) * 100,
-            datum: formulardaten.datum
-        }
+    if (isNaN(formulardaten.betrag)) {
+      fehler.push("Betrag");
     }
-
-    /**
-     * Die private Methode validiert die durch this._formulardaten_verarbeiten() zur Verfügung gestellte Formulardaten.
-     * @param {Objekt} formulardaten - einfaches Objekt mit den verarbeiteten Formulardaten 
-     * @returns {Array} - ein Array mit den Namen der Eingabefelder für die Validierungsfehler die gefunden wurden
-     */
-    _formulardaten_validieren(formulardaten) {
-        let fehler = [];
-        if (formulardaten.titel === "") {
-            fehler.push("Titel");
-        }
-        if (isNaN(formulardaten.betrag)) {
-            fehler.push("Betrag");
-        }       
-        if (formulardaten.datum === null) {            
-            fehler.push("Datum");
-        }
-        return fehler;
+    if (formulardaten.datum === null) {
+      fehler.push("Datum");
     }
+    return fehler;
+  }
 
-    /**
-     * Diese private Methode aktualisiert das Datum des Date-Inputs im Eingabeformular (z.B. beim öffnen der Seite
-     * oder nach erfolgreichem Hinzufügen eines Eintrags zum Haushaltsbuch) und wird dementsprechend in
-     * this._absenden_event_hinzugefuegen() und this._html_generieren() genutzt.
-     */
-    _datum_aktualisieren() {
-        let datums_input = document.querySelector("#datum");
-        if (datums_input !== null) {
-            datums_input.valueAsDate = new Date();
-            
+  /**
+   * Diese private Methode aktualisiert das Datum des Date-Inputs im Eingabeformular (z.B. beim öffnen der Seite
+   * oder nach erfolgreichem Hinzufügen eines Eintrags zum Haushaltsbuch) und wird dementsprechend in
+   * this._absenden_event_hinzugefuegen() und this._html_generieren() genutzt.
+   */
+  _datum_aktualisieren() {
+    let datums_input = document.querySelector("#datum");
+    if (datums_input !== null) {
+      datums_input.valueAsDate = new Date();
+    }
+  }
+
+  /**
+   * Diese private Methode definiert das Submit-Event für das Eingabeformular und handhabt die gesamte Logik
+   * beim Absenden des Eingabeforulars (inkl. Verarbeitung und Validierung der Formulardaten)
+   * @param {Element} eingabeformular - das Eingabeformular-Element, für welches das Submit-Event hinzugefügt wird
+   */
+  _absenden_event_hinzufuegen(eingabeformular) {
+    eingabeformular.querySelector("#eingabeformular").addEventListener("submit", (e) => {
+      e.preventDefault();
+      let formulardaten = this._formulardaten_verarbeiten(this._formulardaten_holen(e));
+      let formular_fehler = this._formulardaten_validieren(formulardaten);
+      if (formular_fehler.length === 0) {
+        liqui_planner.eintrag_hinzufuegen(formulardaten);
+        let bestehende_fehlerbox = document.querySelector(".fehlerbox");
+        if (bestehende_fehlerbox !== null) {
+          bestehende_fehlerbox.remove();
         }
-    }
+        e.target.reset();
+        this._datum_aktualisieren();
+      } else {
+        let fehler = new Fehlerbox(
+          "Folgende Fehlder wurden nicht korrekt ausgefühllt:",
+          formular_fehler
+        );
+        fehler.anzeigen();
+      }
+    });
+  }
 
-    /**
-     * Diese private Methode definiert das Submit-Event für das Eingabeformular und handhabt die gesamte Logik
-     * beim Absenden des Eingabeforulars (inkl. Verarbeitung und Validierung der Formulardaten)
-     * @param {Element} eingabeformular - das Eingabeformular-Element, für welches das Submit-Event hinzugefügt wird
-     */
-    _absenden_event_hinzufuegen(eingabeformular) { 
-        eingabeformular.querySelector("#eingabeformular").addEventListener("submit", e => {
-            e.preventDefault();
-            let formulardaten = this._formulardaten_verarbeiten(this._formulardaten_holen(e));
-            let formular_fehler = this._formulardaten_validieren(formulardaten);
-            if (formular_fehler.length === 0) {
-                liqui_planner.eintrag_hinzufuegen(formulardaten);
-                let bestehende_fehlerbox = document.querySelector(".fehlerbox");
-                if (bestehende_fehlerbox !== null) {
-                    bestehende_fehlerbox.remove();
-                }
-                e.target.reset();
-                this._datum_aktualisieren();
-            } else {
-                let fehler = new Fehlerbox("Folgende Fehlder wurden nicht korrekt ausgefühllt:", formular_fehler);
-                fehler.anzeigen();
-            }             
-        });
-    }
-
-    /**
-     * Diese private Methode generiert das HTML des Eingabeformulars und setzt das Submit-Event mithilfe der Methode
-     * this._absenden_event_hinzufuegen().
-     * @returns {Element} - das Eingabeformular-Element mit all seinen Kindelementen und dem Submit-Event
-     */
-    _html_generieren() {        
-        let eingabeformular = document.createElement("section");
-        eingabeformular.setAttribute("id", "eingabeformular-container");
-        eingabeformular.innerHTML = `<form id="eingabeformular" action="#" method="get"></form>
+  /**
+   * Diese private Methode generiert das HTML des Eingabeformulars und setzt das Submit-Event mithilfe der Methode
+   * this._absenden_event_hinzufuegen().
+   * @returns {Element} - das Eingabeformular-Element mit all seinen Kindelementen und dem Submit-Event
+   */
+  _html_generieren() {
+    let eingabeformular = document.createElement("section");
+    eingabeformular.setAttribute("id", "eingabeformular-container");
+    eingabeformular.innerHTML = `<form id="eingabeformular" action="#" method="get"></form>
         <div class="eingabeformular-zeile">
-            <h1>Neue Einnahme / Ausgabe hinzufügen</h1>
+            <h1>Einnahmen / Ausgaben</h1>
         </div>
         <div class="eingabeformular-zeile">
             <div class="titel-typ-eingabe-gruppe">
@@ -140,20 +141,20 @@ export default class Eingabeformular {
         <div class="eingabeformular-zeile">
             <button class="standard" type="submit" form="eingabeformular">Hinzufügen</button>
         </div>`;
-        
-        this._absenden_event_hinzufuegen(eingabeformular);
 
-        return eingabeformular;
-    }
+    this._absenden_event_hinzufuegen(eingabeformular);
 
-    /**
-     * Diese Methode zeigt das generierte Eingabeformular an der richtigen Stelle in der UI an.
-     */
-    anzeigen(){
-        let navigationsleiste = document.querySelector("#navigationsleiste");
-        if (navigationsleiste !== null) {
-            navigationsleiste.insertAdjacentElement("afterend", this._html);
-            this._datum_aktualisieren();
-        }        
+    return eingabeformular;
+  }
+
+  /**
+   * Diese Methode zeigt das generierte Eingabeformular an der richtigen Stelle in der UI an.
+   */
+  anzeigen() {
+    let navigationsleiste = document.querySelector("#navigationsleiste");
+    if (navigationsleiste !== null) {
+      navigationsleiste.insertAdjacentElement("afterend", this._html);
+      this._datum_aktualisieren();
     }
+  }
 }
